@@ -1,5 +1,23 @@
+// DELETE /api/orders/:id (user): eliminar pedido propio
+exports.remove = async (req, res) => {
+  try {
+    const order = await Order.findByPk(req.params.id);
+    if (!order) return res.status(404).json({ error: 'Pedido no encontrado' });
+    // Solo el dueño o admin puede eliminar
+    if (order.user !== req.user.id && req.user.role !== 'admin') {
+      return res.status(403).json({ error: 'No autorizado' });
+    }
+    await order.destroy();
+    res.status(204).end();
+  } catch (err) {
+    console.error('Error eliminando pedido:', err, err.stack);
+    res.status(500).json({ error: err.message });
+  }
+};
 const { Order, Product, User } = require('../models');
 const nodemailer = require('nodemailer');
+
+
 
 const sendReceipt = async (order, user) => {
   if (!process.env.SMTP_HOST) return;
@@ -50,11 +68,12 @@ exports.create = async (req, res) => {
     for (const i of items) {
       const prod = await Product.findByPk(i.product);
       if (!prod || !prod.isActive) return res.status(400).json({ error: 'Producto inválido' });
+      // La talla ahora viene de i.size (seleccionada por el usuario)
       snapshotItems.push({
         product: prod.id,
         name: prod.name,
         model: prod.model,
-        size: prod.size,
+        size: i.size, // talla seleccionada por el usuario
         unitPrice: prod.price,
         quantity: i.quantity
       });
@@ -65,14 +84,43 @@ exports.create = async (req, res) => {
       items: snapshotItems,
       total,
       paymentMethod,
-      status: 'PAID'
+      status: 'PAID',
+      statusUpdates: [
+        'Su pedido está siendo confeccionado',
+        'Su pedido está siendo llevado a su destino',
+        'Su pedido ha sido entregado'
+      ]
     });
     const user = await User.findByPk(req.user.id);
-    // if (process.env.SMTP_HOST) await sendReceipt(order, user);
+    if (process.env.SMTP_HOST) await sendReceipt(order, user);
     res.status(201).json({ orderId: order.id, status: 'PAID' });
   } catch (err) {
     console.error('Error creando orden:', err);
     res.status(500).json({ error: err.message || 'Error interno al crear la orden' });
+  }
+};
+// GET /api/orders/all (admin): ver todos los pedidos
+exports.all = async (req, res) => {
+  try {
+    const orders = await Order.findAll({ order: [['createdAt','DESC']] });
+    res.json(orders.map(o => (o.toJSON ? o.toJSON() : o)));
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+// GET /api/orders/:id/updates (user): ver actualizaciones de estado de un pedido
+exports.updates = async (req, res) => {
+  try {
+    const order = await Order.findByPk(req.params.id);
+    if (!order) return res.status(404).json({ error: 'Pedido no encontrado' });
+    // Solo el dueño o admin puede ver
+    if (order.user !== req.user.id && req.user.role !== 'admin') {
+      return res.status(403).json({ error: 'No autorizado' });
+    }
+    res.json({ statusUpdates: order.statusUpdates });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
   }
 };
 

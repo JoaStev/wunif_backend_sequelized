@@ -1,30 +1,29 @@
 const { Message } = require('../models');
-const nodemailer = require('nodemailer');
+const { transporter } = require('../utils/mailer');
 const { normalizeArray, normalize } = require('../utils/serialize');
 
 const notifyAdmin = async (msg) => {
   if (!process.env.SMTP_HOST) return;
-  const transporter = nodemailer.createTransport({
-    host: process.env.SMTP_HOST,
-    port: process.env.SMTP_PORT,
-    auth: {
-      user: process.env.SMTP_USER,
-      pass: process.env.SMTP_PASS,
-    },
-  });
-  await transporter.sendMail({
-    from: process.env.MAIL_FROM,
-    to: process.env.MAIL_FROM,
-    subject: `Nuevo mensaje de contacto: ${msg.subject}`,
-    html: `<b>De:</b> ${msg.fromName} (${msg.fromEmail})<br><b>Asunto:</b> ${msg.subject}<br><p>${msg.body}</p>`
-  });
+  try {
+    const mailFrom = process.env.MAIL_FROM || process.env.SMTP_USER;
+    const mailTo = process.env.SMTP_USER;
+    await transporter.sendMail({
+      from: mailFrom,
+      to: mailTo,
+      subject: `Nuevo mensaje de contacto: ${msg.subject}`,
+      replyTo: `${msg.fromName} <${msg.fromEmail}>`,
+      html: `<b>De:</b> ${msg.fromName} (${msg.fromEmail})<br><b>Asunto:</b> ${msg.subject}<br><p>${msg.body}</p>`
+    });
+  } catch (err) {
+    console.error('Error enviando notificación por correo:', err && err.message ? err.message : err);
+  }
 };
 
 exports.create = async (req, res) => {
   try {
     const { fromName, fromEmail, subject, body } = req.body;
     const message = await Message.create({ fromName, fromEmail, subject, body });
-    if (process.env.SMTP_HOST) await notifyAdmin(message);
+  if (process.env.SMTP_HOST) await notifyAdmin(message);
     res.status(201).json({ message: 'Recibido' });
   } catch (err) {
     res.status(500).json({ error: err.message });

@@ -11,7 +11,7 @@ const sequelize = process.env.DATABASE_URL
   : new Sequelize(
       process.env.DB_NAME || 'icit-web',
       process.env.DB_USER || 'postgres',
-      process.env.DB_PASS || 'Diosesmipastor1023',
+      process.env.DB_PASS || 'lauradiegojoan',
       {
         host: process.env.DB_HOST || 'localhost',
         port: process.env.DB_PORT ? Number(process.env.DB_PORT) : (dialect === 'postgres' ? 5432 : 3306),

@@ -7,7 +7,6 @@ const { limiter } = require('../middleware/rateLimit');
 
 const router = express.Router();
 
-// POST /api/contact (público/usuario)
 router.post(
   '/',
   limiter('contact'),
@@ -21,10 +20,8 @@ router.post(
   messageController.create
 );
 
-// GET /api/contact (admin)
 router.get('/', auth, requireRole('admin'), messageController.list);
 
-// PATCH /api/contact/:id (admin)
 router.patch('/:id', auth, requireRole('admin'), messageController.handle);
 
 module.exports = router;

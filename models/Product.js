@@ -9,7 +9,7 @@ module.exports = (sequelize) => {
     },
     name: { type: DataTypes.STRING, allowNull: false },
     model: { type: DataTypes.STRING, allowNull: false },
-    size: { type: DataTypes.STRING, allowNull: false },
+  // Eliminado campo size. La talla se selecciona al comprar, no al crear producto.
     price: { type: DataTypes.FLOAT, allowNull: false, defaultValue: 0 },
     imageUrl: { type: DataTypes.STRING },
     isActive: { type: DataTypes.BOOLEAN, defaultValue: true },

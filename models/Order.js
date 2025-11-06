@@ -11,7 +11,7 @@ module.exports = (sequelize) => {
       type: DataTypes.STRING,
       allowNull: false,
     },
-    items: { // snapshot: array de objetos (JSONB en Postgres)
+    items: { // array de objetos: cada uno debe incluir talla seleccionada
       type: DataTypes.JSONB,
       allowNull: false,
       defaultValue: []
@@ -19,6 +19,15 @@ module.exports = (sequelize) => {
     total: { type: DataTypes.FLOAT, allowNull: false, defaultValue: 0 },
     paymentMethod: { type: DataTypes.ENUM('PSE','DEBITO','CREDITO'), allowNull: false },
     status: { type: DataTypes.ENUM('PAID','FAILED','PENDING'), defaultValue: 'PAID' },
+    statusUpdates: {
+      type: DataTypes.ARRAY(DataTypes.STRING),
+      allowNull: false,
+      defaultValue: [
+        'Su pedido está siendo confeccionado',
+        'Su pedido está siendo llevado a su destino',
+        'Su pedido ha sido entregado'
+      ]
+    },
   }, {
     tableName: 'orders',
     timestamps: true,
